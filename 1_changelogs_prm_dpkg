@@ -1,0 +1,71 @@
+﻿#!/bin/bash
+## #ЧЕРЕз ПАКЕТНЫЕ МЕНЕДЖЕРЫ rpm dpkg
+## ДЛЯ dkpg ИНФО О ВЕРСИи ПОмЕЩАЕтСЯ ТОЛЬКо ПОСЛЕДНяя версия
+## ( некоторые вовсе имеют ссылки на логи зависимостей)
+vre=$2
+if [[ $2 == '' ]]; then 
+	vre=0
+fi
+lob=`cat /etc/*-release | grep -i ^ID= | sed 's|.*=||' | tr -d \"`
+filename=$(basename -- "$1")
+echo $filename
+ext="${filename##*.}"
+name=`echo $filename | sed  -z 's/\..*//'`
+echo $name
+echo $ext
+if [[ $lob == "centos" || $lob == "rhel" ]]; then
+	if [[ $ext == "rpm" ]]; then
+		lob2=`rpm -qp --changelog $1`
+	else 
+		lob2=`rpm -q --changelog $1`
+	fi
+	lob3=`echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$vre'/d'`
+	echo centos
+	if [[ $lob3 == "" ]]; then
+	echo not a changelog $1 $2 "in rpm"
+	else 
+		echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$vre'/d'| less
+	fi
+fi
+if [[ $lob == "debian" || $lob == "ubuntu" ]]; then
+	echo deb
+	if [[ $ext != "deb" ]]; then
+		for i in $(apt-cache depends $1 | grep -E 'Depends|Recommends|Suggests|Зависит' | cut -d ':' -f 2,3 | sed -e s/'<'/''/ -e s/'>'/''/);
+		do 
+			if [[ $i == '' ]]; then
+				echo not a Package  $1 $2 "in repo or catalog have .deb" 
+				exit 0;
+			fi
+			apt-get download $i;
+		done
+		apt-get download $1
+		if [[ $? -eq 1 || $? == '' ]]; then
+			echo not a Package  $1 $2 "in repo or catalog have .deb" 
+			exit 0;
+		fi		
+		for i in *.deb;
+			do 
+			dpkg -X $i ./$1;
+			rm $i;
+		done
+	fi
+	
+	if [[ $ext == "deb" ]]; then
+		echo debq
+		dpkg -X $1 ./$name
+		echo deb2
+	fi
+	lob2=`dpkg-parsechangelog -l ./$name/usr/share/doc/$name/changelog.Debian.gz`
+		if [[ $? -eq 1 ]]; then
+			echo not a Package  $1 $2 "in repo or catalog have .deb or your .deb have not a changelog" 
+			exit 0;
+		fi		
+	rm -R $1
+	lob3=`echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$vre'/d'`
+	if [[ $lob3 == "" ]]; then
+		echo not a changelog $1 $2 "in dpkg"
+	else 
+		echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$vre'/d' | less
+	fi
+fi
+exit 0;

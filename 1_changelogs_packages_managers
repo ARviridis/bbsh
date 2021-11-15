@@ -1,0 +1,54 @@
+﻿#!/bin/bash
+#ЧЕРЕз ПАКЕТНЫЕ МЕНЕДЖЕРЫ сеть
+lob=`cat /etc/*-release | grep -i ^ID= | sed 's|.*=||' | tr -d \"`
+if [[ $lob == "centos" ]]; then
+	lob2=`yum changelog $1`
+	lob3=`echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$2'/d'`
+	echo centos
+	if [[ $lob3 == "" ]]; then
+	echo not a changelog $1 $2 "in yum"
+	else 
+		echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$2'/d'| less
+	fi
+fi
+if [[ $lob == "rhel" ]]; then
+	echo rhel
+	lob2=`yum changelog $1`
+	lob3=`echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$2'/d'`
+	if [[ $lob3 == "" ]]; then
+	echo not a changelog $1 $2 "in yum"
+	else 
+		echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$2'/d'| less
+	fi
+fi
+if [[ $lob == "ubuntu" ]]; then
+	echo ubuntu
+	lob2=`apt changelog $1`
+	lob3=`echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$2'/d'`
+	if [[ $lob3 == "" ]]; then
+	echo not a changelog $1 $2 "in apt"
+	else 
+		echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$2'/d'| less
+	fi
+fi
+if [[ $lob == "debian" ]]; then
+	echo deb
+	lob2=`apt-get changelog $1`
+	lob3=`echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$2'/d'`
+	if [[ $lob3 == "" ]]; then
+	echo not a changelog $1 $2 "in apt-get"
+	else 
+		echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$2'/d'| less
+	fi
+fi
+if [[ $lob == "arch" ]]; then
+	echo arch
+	lob2=`pacman -Qc $1`
+	lob3=`echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$2'/d'`
+	if [[ $lob3 == "" ]]; then
+	echo not a changelog $1 $2 "with pacman"
+	else 
+		echo "$lob2" | sed -e '/^ *$/d' -e '1,/'$2'/d'| less
+	fi
+fi
+exit 0; 

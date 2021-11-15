@@ -1,0 +1,15 @@
+#!/bin/bash
+dmidecode -t 17 | awk \
+    'BEGIN { FS=":"; OFS="---" } \
+    /Size|Form Factor|Configured Memory Speed|Manufacturer/  \
+    { gsub(/^[ \t]+/,"",$2); line = (line ? line OFS : "") $2 }\
+    /^$/ \
+    { \
+        tick[line]++ ; \
+        line="" ; \
+    }  \
+    END { \
+        for (saveline1 in tick) \
+            if (saveline1!=null) print tick[saveline1],saveline1 \
+        } \
+    '  | grep -iv "no module"
