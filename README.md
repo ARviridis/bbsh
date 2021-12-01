@@ -13,3 +13,11 @@ sed cuts the beginning, and does not touch past versions in the text.
 resul:  
 kol---Volume(all) MB--type-speed MT/s--manfacture  
   
+3_. Script for scan the application memory (proc/$pid/smaps)
+https://github.com/ARviridis/mem_leaker  
+difference analysis after the delay
+Parameters:  <$1> pid_or_name  <$2> delay  
+resul:  
+Program <prog_name> has/hasn't memory leak  
+when there is a memory leak  
+outputs the difference of the change parameters after the delay  
