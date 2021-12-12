@@ -1,5 +1,6 @@
-#!/bin/bash
+﻿#!/bin/bash
 ## analiz proc smap 
+
 if [[ $1 == '' ]]; then
 	read -p 'vvod pid or name_process: ' pid
 else pid=$1
@@ -29,59 +30,132 @@ else
 		exit 0
 	fi
 fi
-# ввод времени
+# ввод времени сбора
+
 if [[ $2 == '' ]]; then
 	read -p 'vvod vremya zamera: ' tt
 else tt=$2
 fi
+shag=0
+pkb2=0
 
 lib=$(< /proc/$pid/smaps)
-sleep $tt
-lib2=$(< /proc/$pid/smaps)
 
-lib3=$(diff -u <(echo "$lib") <(echo "$lib2"))
-#echo $'\n'
-IFS=$'\n'
-for line in $lib3
+for (( ;; ))
 do
-   if [[ $line == *" Size:"* ]]; then
-	szkb+=$line
-	szkb+=$'\n'
-   fi
-   if [[ $line == *" Private_Clean:"* ]]; then
-	pkb+=$line
-	pkb+=$'\n'
-   fi
-   if [[ $line == *"Private_Dirty:"* ]]; then
-	pkb+=$line
-	pkb+=$'\n'
-   fi
-   if [[ $line == *"Shared_Clean:"* ]]; then
-	skb+=$line
-	skb+=$'\n'
-   fi
-   if [[ $line == *"Shared_Dirty:"* ]]; then
-	skb+=$line
-	skb+=$'\n'
-   fi
-   if [[ $line == *"Pss:"* ]]; then
-	psskb+=$line
-	psskb+=$'\n'
-   fi
+	sleep $tt
+	echo $shag
+	let "shag = $shag + 1"
+	echo $shag
+	echo -ne Значение шага $shag  \\r
+	
+	lib2=$(< /proc/$pid/smaps)
+
+	lib3=$(diff -u <(echo "$lib") <(echo "$lib2")) #-s
+
+	#echo $'\n' # просто для разделения
+	IFS=$'\n'
+
+	# СЧИТАТЬ ПОСТРОЙЧНО ЕСЛИ ЕСТЬ СОВПАДЕНИЯ 
+	szkb=0
+	pkb=0
+	skb=0
+	psskb=0
+	tkb=0
+	for line in $lib3
+	do
+	   if [[ $line == *"Size:"* ]]; then
+		szkb+=$line
+		szkb+=$'\n'
+		#echo $line
+	   fi
+	   if [[ $line == *"Private_Clean:"* ]]; then
+		pkb+=$line
+		pkb+=$'\n'
+		line2=`echo $line| tr -cd '[[:digit:]]' `
+		let "pkb2 = $line2 - $pkb2 " # как раз находим приращение
+		echo 11111111111111111
+		echo $pkb2
+		#echo $line
+	   fi
+	   if [[ $line == *"Private_Dirty:"* ]]; then
+		pkb+=$line
+		pkb+=$'\n'
+
+		line2=`echo $line| tr -cd '[[:digit:]]' `
+		let "pkb2 = $line2 - $pkb2 " # как раз находим приращение
+		echo 444444444444
+		echo $pkb2
+		#echo $line
+	   fi
+	   if [[ $line == *"Shared_Clean:"* ]]; then
+		skb+=$line
+		skb+=$'\n'
+		#echo $line
+	   fi
+	   if [[ $line == *"Shared_Dirty:"* ]]; then
+		skb+=$line
+		skb+=$'\n'
+		#echo $line
+	   fi
+	   if [[ $line == *"Pss:"* ]]; then
+		psskb+=$line
+		psskb+=$'\n'
+		#echo $line
+	   fi
+	done
+
+	tkb+=$pkb
+	tkb+=$skb
+
+	tkb2=`echo $tkb | tr -cd '[[:digit:]]' `
+	echo 0000000000000000000000
+	echo $tkb
+	echo 0000000000000000000000
+	echo $tkb2
+	echo 0000000000000000000000
+	echo $pkb2
+
+	# надо выделить изменение tkb
+	let "lib4 = $pkb2 / $tt"  #производная №направление ><=0 # приращение согласно единице в шаг
+	echo $lib4
+
+	if [ "$lib4" -gt "0" ]; then
+		echo BOLSHE
+	fi
+	if [ "$lib4" -eq "0" ]; then
+		echo 00000000zanulil
+	fi
+	if [ "$lib4" -lt "0" ]; then
+		echo MENSHE
+	fi
+
+
+	#echo $'\n'
+	#СЧИТАТЬ ПОСТРОЙЧНО  СОВПАДЕНИЯ В "ОЗНАчает утечку" (в нашем приложении
+	# вообще показывет на сколько именилось значение занимаемой памяти)
+	if [ "$tkb" ]; then
+		echo -e "\033[36m""Program" $(ps -p $pid -o comm=) "has memory leak""\033[0m"
+	    	#echo  "Всего приват: "$'\n'"$pkb" 
+	    	#echo  "Всего shared: "$'\n'"$skb" 
+	    	#echo  "Всего proc prop pss: "$'\n'"$psskb"
+	    	#echo  "Priv + shared: "$'\n'"$tkb" 
+	    	#echo  "Size:"$'\n'"$szkb"
+	else
+		echo -e "\033[36m""Program" $(ps -p $pid -o comm=) "hasn't memory leak""\033[0m"
+	fi
+	echo "info memory"
+	pmap -d $pid | tail -n 1	
+	
+	
+	#sleep 0.5
 done
-tkb+=$pkb
-tkb+=$skb
-# СОВПАДЕНИЯ В "ОЗНАчает утечку" (в нашем случае
-# вообще показывет на сколько именилось значение занимаемой памяти)
-if [ "$tkb" ]; then
-	echo -e "\033[36m""Program" $(ps -p $pid -o comm=) "has memory leak""\033[0m"
-    	echo  "Всего приват: "$'\n'"$pkb" 
-    	echo  "Всего shared: "$'\n'"$skb" 
-    	echo  "Всего proc prop pss: "$'\n'"$psskb"
-    	echo  "Priv + shared: "$'\n'"$tkb" 
-    	echo  "Size:"$'\n'"$szkb"
-else
-	echo -e "\033[36m""Program" $(ps -p $pid -o comm=) "hasn't memory leak""\033[0m"
-fi
-echo "info memory"
-pmap -d $pid | tail -n 1
+
+
+
+
+
+ 
+# Чистимся
+#rm -f ${SONAME_LIST} slc{,.c}
+exit 0;
