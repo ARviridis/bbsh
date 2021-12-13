@@ -1,0 +1,25 @@
+#!/bin/bash
+dmidecode -t 17 | awk \
+	'BEGIN { FS=":"; OFS=" " } \
+	/Size|Form Factor|Configured Memory Speed|Manufacturer/  \
+	{ gsub(/^[ \t]+/,"",$2); \
+	if ($1 == "	Size") {$2="x "$2}; \
+	if ($1 == "	Form Factor") {$2="x "$2}; \
+	if ($1 == "	Configured Memory Speed") {$2="x "$2}; \
+	if ($1 == "	Manufacturer") {$2="x "$2}; \
+	line = (line ? line OFS : "") $2 }\
+	
+    /^$/ \
+    { \
+        tick[line]++ ; \
+        line="" ; \
+    }  \
+    END { \
+	for (saveline1 in tick) { \
+		if (saveline1!=null) { \
+			split('saveline1',a,"x"); \
+			printf  ("%s\n",'tick[saveline1]'" x"a[2]"x"a[3]"x"a[4]"x"a[5]) \
+		 } \
+	} \
+        } \
+   '  | grep -iv "no module"
