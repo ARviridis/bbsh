@@ -18,7 +18,7 @@ dmidecode -t 17 | awk \
 	for (saveline1 in tick) { \
 		if (saveline1!=null) { \
 			split('saveline1',a,"x"); \
-			printf  ("%s\n",'tick[saveline1]'" x"a[2]"x"a[3]"x"a[4]"x"a[5]) \
+			printf ("%d x%sx%sx%sx%s\n",'tick[saveline1]',a[2],a[3],a[4],a[5]) \
 		 } \
 	} \
         } \
