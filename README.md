@@ -21,3 +21,7 @@ resul:
 Program <prog_name> has/hasn't memory leak  
 when there is a memory leak  
 outputs the difference of the change parameters after the delay  
+
+if need  
+*.sh and exit 0 for end
+(1_doc_in_os_changelog_v1_diff_exit0.sh)
